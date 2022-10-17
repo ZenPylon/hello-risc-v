@@ -46,7 +46,6 @@
    $reset = *reset;
    
    $pc[31:0] = >>1$next_pc[31:0];
-   $next_pc[31:0] = $reset == 1 ? 0 : $pc[31:0] + 4;
    `READONLY_MEM($pc, $$instr[31:0])
    
    $is_u_instr = $instr[6:2] ==? 5'b0x101;
@@ -98,8 +97,21 @@
                    $is_add ? $src1_value + $src2_value :
                    32'b0;
 
+   $taken_br = $is_beq && $src1_value == $src2_value ||
+               $is_bne && $src1_value != $src2_value ||
+               $is_blt && (($src1_value < $src2_value) ^ ($src1_value[31] != $src2_value[31])) ||
+               $is_bge && (($src1_value >= $src2_value) ^ ($src1_value[31] != $src2_value[31])) ||
+               $is_bltu && $src1_value < $src2_value ||
+               $is_bgeu && $src1_value >= $src2_value ?
+               1 : 0;
+   
+   $br_tgt_pc[31:0] = $imm[31:0] + $pc[31:0];
+   $next_pc[31:0] = $reset == 1 ? 0 :
+                    $taken_br == 1 ? $br_tgt_pc[31:0] :
+                    $pc[31:0] + 4;
+   
    // Assert these to end simulation (before Makerchip cycle limit).
-   *passed = 1'b0;
+   m4+tb()
    *failed = *cyc_cnt > M4_MAX_CYC;
    
    m4+rf(32, 32, $reset, $rd_valid, $rd, $result, $rs1_valid, $rs1[4:0], $src1_value, $rs2_valid, $rs2[4:0], $src2_value)
