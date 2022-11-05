@@ -137,9 +137,14 @@
                1 : 0;
    
    $br_tgt_pc[31:0] = $imm[31:0] + $pc[31:0];
+   $jalr_tgt_pc[31:0] = $src1_value + $imm;
    $next_pc[31:0] = $reset == 1 ? 0 :
                     $taken_br == 1 ? $br_tgt_pc[31:0] :
+                    $is_jal == 1 ? $br_tgt_pc[31:0] :
+                    $is_jalr == 1 ? $jalr_tgt_pc :
                     $pc[31:0] + 4;
+   
+   
    
    // Assert these to end simulation (before Makerchip cycle limit).
    m4+tb()
