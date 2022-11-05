@@ -125,7 +125,8 @@
                                 $sltiu_rslt :
                                 { 31'b0, $src1_value[31] } ) :
                    $is_sra ? $sra_rslt[31:0] :
-                   $is_srai ? $srai_rslt[31:0] :    
+                   $is_srai ? $srai_rslt[31:0] :
+                   $is_load || $is_s_instr ? $src1_value + $imm :
                    32'b0;
 
    $taken_br = $is_beq && $src1_value == $src2_value ||
@@ -144,14 +145,15 @@
                     $is_jalr == 1 ? $jalr_tgt_pc :
                     $pc[31:0] + 4;
    
+   $rf_write[31:0] = $is_load ? $ld_data : $result;
    
    
    // Assert these to end simulation (before Makerchip cycle limit).
    m4+tb()
    *failed = *cyc_cnt > M4_MAX_CYC;
    
-   m4+rf(32, 32, $reset, $rd_valid, $rd, $result, $rs1_valid, $rs1[4:0], $src1_value, $rs2_valid, $rs2[4:0], $src2_value)
-   //m4+dmem(32, 32, $reset, $addr[4:0], $wr_en, $wr_data[31:0], $rd_en, $rd_data)
+   m4+rf(32, 32, $reset, $rd_valid, $rd, $rf_write, $rs1_valid, $rs1[4:0], $src1_value, $rs2_valid, $rs2[4:0], $src2_value)
+   m4+dmem(32, 32, $reset, $result[6:2], $is_s_instr, $src2_value[31:0], $is_load, $ld_data)
    m4+cpu_viz()
 \SV
    endmodule
